@@ -23,7 +23,7 @@ var clear = function(){
 	ctx.fill();
 }
 
-var manyCircles = 5, circles = [];
+var manyCircles = 10, circles = []; //make html slider to determine # of squares, then use that value instead of this
 
 var Circle = function(xholderbctoolazytoremoveallcases,y,radius,transparency,speed){
 	var that = this;
@@ -39,8 +39,10 @@ var Circle = function(xholderbctoolazytoremoveallcases,y,radius,transparency,spe
 	return that;
 }
 
-for(var i =0; i < manyCircles;i++){
-	circles[i] = new Circle("whocares",Math.random()*height,Math.random()*100,Math.random()/2,Math.random()*15);
+var GenerateCircles = function(){
+	for(var i =0; i < manyCircles;i++){
+		circles[i] = new Circle("whocares",Math.random()*height,Math.random()*100,Math.random()/2,Math.random()*15);
+	}
 }
 
 var DrawCircles = function(){
@@ -99,27 +101,20 @@ var player = new (function(){
 	}
 
 	that.moveLeft = function(){
-		if(that.x-that.movement >= 0){
-			that.setPosition(that.x-that.movement,that.y)
-		}
+		that.setPosition(that.x-that.movement,that.y)
 	}
 
 	that.moveRight = function(){
-		if(that.x+that.width+that.movement <= width){ //+10 represents the current hardcoded value of dx & dy; this way 595px->605px !possible
-			that.setPosition(that.x+that.movement,that.y)
-		}
+		that.setPosition(that.x+that.movement,that.y)
 	}
 	
 	that.moveUp = function(){
-		if(that.y-that.movement >= 0){
-			that.setPosition(that.x,that.y-that.movement)
-		}
+		that.setPosition(that.x,that.y-that.movement)
 	}
 
 	that.moveDown = function(){
-		if(that.y+that.height+that.movement <= height){ //+10 represents the current hardcoded value of dx & dy; this way 595px->605px !possible
-			that.setPosition(that.x,that.y+that.movement)
-		}
+		that.setPosition(that.x,that.y+that.movement)
+		
 	}
 
 	that.move = function(dir){
@@ -140,41 +135,66 @@ var player = new (function(){
 	that.die = function(){ //try to make loss that actually ceases gameloop!
 		//lose game 
 		lost = true;
-		document.write("you lose, but you scored "+score+" points");	
+		//document.write("you lose, but you scored "+score+" points");	
+		ctx.font = '250pt Arial';
+		ctx.fillStyle = 'rgb(0,0,0)';
+		ctx.textAlign = 'center';
+		ctx.fillText(score,(width/2)-20,(height/2)+85);
 	}
 	
 })();
+
+var Restart = function(){
+	player.direction = 'none';
+	player.setPosition(width/2,height/2);
+	score = 0;
+	lost = false;
+	manyCircles = 10;
+	circles = [];
+	GenerateCircles();
+	GameLoop();
+}	
+
 
 document.onkeypress = function(e){
 	if(e.keyCode) keycode = e.keyCode;
 	else{keycode = e.which}
 
-	ch = String.fromCharCode(keycode);
-
-	if(ch == 'a'){ //edit this so that keeps moveLeft()ing until alternate keypress
+	//ch = String.fromCharCode(keycode);
+	ch = keycode;
+	if(ch == 97){ //edit this so that keeps moveLeft()ing until alternate keypress
 		player.direction = 'left';
-	} else if(ch =='w'){
+	} else if(ch ==119){
 		player.direction = 'up';
-	} else if(ch =='d'){
+	} else if(ch ==100){
 		player.direction = 'right';
-	} else if(ch =='s'){
+	} else if(ch ==115){ 
 		player.direction = 'down';
-	}
+	} else if(lost && ((ch == 32)||(ch==114))){
+		Restart();
+	}		
 }
 
 var checkCollision = function(){
 	circles.forEach(function(e,ind){
-		if((player.x < e.x + e.r)&&(player.x+player.width > e.x)&& //will need -e.r if circle is described at center
+		if((player.x < e.x + e.r )&&(player.x+player.width > e.x )&& //will need -e.r if circle is described at center
 		(player.y < e.y + e.r) && (player.y + player.height > e.y)){
-			e.onCollide();
+			e.onCollide(); //superfluous, just use player.die() unless you add to onCollide
 		}
 	})
+	if((player.x < 0)||(player.y < 0)||(player.x+player.width > width)||(player.y+player.height > height)){
+		player.die();
+	}
 }
 
 
-//player.setPosition(~~((width-player.width)/2),((height-player.height)/2));
-player.setPosition(width/2,height/2);
+//Restart();
+
+	player.setPosition(width/2,height/2);
 	
+
+
+	GenerateCircles();
 
 var GameLoop = function(){
 	clear();
@@ -186,5 +206,9 @@ var GameLoop = function(){
 	if(!lost)
 	    gLoop = setTimeout(GameLoop,1000/50);
 	score++;
+	if(score % 100 == 0){ //every 100pts, add another square, ineptly named as a circle
+		manyCircles++;
+		circles.push(new Circle("whocares",Math.random()*height,Math.random()*100,Math.random()/2,Math.random()*15));
+	}
 }
 GameLoop();
